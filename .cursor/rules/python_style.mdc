@@ -1,0 +1,19 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+# Python Style
+
+- Python 3.12+
+- Use modern syntax and full type annotations
+- Use | instead of `Union`
+- Use builtins like `list`, `dict` instead of importing `List` and `Dict` from `typing`
+- Use | None instead of `Optional`
+- Note that `Any` would still need to be imported from `typing`, because `any` is a built-in function
+- Always type optional keyword arguments correctly e.g. `def f(x: int | None = None)`
+- When calling functions, use the keywords whenever you can. So instead of `sum = add(3, 7)`, I want `sum = add(a=3, b=7)`
+- Use `pathlib` instead of `os.path`
+- Use `httpx` instead of `requests`
+- Use `loguru` for logging
+- Not a hard rule but prefer functional programming over object oriented programming

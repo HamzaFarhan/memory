@@ -1,6 +1,6 @@
 # Memory System
 
-A knowledge graph-based memory system for AI agents that enables persistent information storage between conversations.
+A knowledge-graph-based memory system for AI agents that enables persistent information storage between conversations.
 
 ## Features
 

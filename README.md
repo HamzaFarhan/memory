@@ -1,4 +1,4 @@
-# Memory System
+# Memory MCP
 
 A knowledge-graph-based memory system for AI agents that enables persistent information storage between conversations.
 

@@ -1,5 +1,5 @@
 # Objective:
-The knowledge graph has become too large. Your primary goal is to reduce its size by intelligently condensing the `observations` associated with each entity. This process will NOT involve removing or altering any entities or relations themselves; the focus is strictly on the `observations`.
+The knowledge graph has become too large. Your primary goal is to reduce its size by intelligently condensing the `observations` associated with each entity. This process is essential for optimizing the knowledge graph's performance, relevance, and cost-effectiveness, ensuring the agent can quickly access the most pertinent information without being overwhelmed by excessive detail. This process will NOT involve removing or altering any entities or relations themselves; the focus is strictly on the `observations`.
 
 ## Key Instructions:
 1. **Input**: You will process entities and their existing observations.
@@ -8,8 +8,9 @@ The knowledge graph has become too large. Your primary goal is to reduce its siz
     - Summarizing lengthy narratives or multiple related points into more concise statements.
     - Merging discrete but connected pieces of information into a single, more comprehensive observation.
     - Rephrasing for optimal clarity and brevity without altering the core meaning.
+    - Focus on distilling the core meaning and essential assertions from the observations.
 3. **Critical Constraint - No Information Loss**:
-    - It is paramount that you DO NOT lose any essential information or critical context from the original observations. The aim is to reduce verbosity and redundancy, NOT the informational content. Do not invent new facts or observations.
+    - It is paramount that you DO NOT lose any essential information or critical context from the original observations. The aim is to reduce verbosity and redundancy, NOT the informational content. Preserve the complete semantic value and all critical details. Do not invent new facts or observations.
     - Pay particular attention to preserving the complete meaning of observations related to instructions, procedures, user preferences, explicit feedback, and stated goals, as these often contain nuanced details vital for future actions.
 4. **Integrity of Structure**: Do NOT modify, add, or remove any entities or relations themselves. Your focus is solely on the `observations` list for each entity.
 5. **Handling Uncondensable Observations**: If an entity's observations are already optimally concise or cannot be condensed further without risking information loss, retain the original observations for that entity.

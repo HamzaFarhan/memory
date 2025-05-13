@@ -11,9 +11,11 @@ from pydantic_ai import ModelRetry
 
 load_dotenv()
 
+DEFAULT_MEMORY_FILE_PATH = "memory.json"
+
 
 def load_memory_path() -> Path:
-    return Path(os.getenv("MEMORY_FILE_PATH", "memory.json"))
+    return Path(os.getenv("MEMORY_FILE_PATH", DEFAULT_MEMORY_FILE_PATH))
 
 
 class Entity(BaseModel):
@@ -129,7 +131,15 @@ async def add_relations(relations: list[Relation]) -> None:
         The relation_from and relation_to are the names of the entities that are connected by the relation.
     """
     graph = await load_knowledge_graph()
-    validate_relations(graph.entities, graph.relations)
+
+    # Validate incoming relations before attempting to add them
+    # This checks if the entities referred to by the new relations exist.
+    if relations:  # Only validate if there are relations to add
+        temp_relations_dict_for_validation = {
+            (r.relation_from, r.relation_to, r.relation_type): r for r in relations
+        }
+        validate_relations(graph.entities, temp_relations_dict_for_validation)
+
     graph.relations.update({(r.relation_from, r.relation_to, r.relation_type): r for r in relations})
     await save_knowledge_graph(graph)
 
@@ -154,10 +164,26 @@ async def add_observations(entity_name: str, observations: list[str]) -> None:
 
 async def delete_entities(entity_names: list[str]) -> None:
     graph = await load_knowledge_graph()
+    actually_deleted_entities: set[str] = set()
+
     for entity_name in entity_names:
         if not graph.entities.get(entity_name):
             continue
         del graph.entities[entity_name]
+        actually_deleted_entities.add(entity_name)
+
+    if not actually_deleted_entities:
+        return
+
+    # Remove relations connected to any of the deleted entities
+    relations_to_keep = {
+        key: relation
+        for key, relation in graph.relations.items()
+        if relation.relation_from not in actually_deleted_entities
+        and relation.relation_to not in actually_deleted_entities
+    }
+    graph.relations = relations_to_keep
+
     await save_knowledge_graph(graph)
 
 
@@ -171,53 +197,123 @@ async def delete_relations(relations: list[Relation]) -> None:
     await save_knowledge_graph(graph)
 
 
-async def search_nodes(query: str) -> KnowledgeGraph:
+async def search_nodes(
+    query: str,
+    search_mode: Literal["any_token", "all_tokens", "exact_phrase"] = "any_token",
+) -> KnowledgeGraph:
     """
     Search for nodes in the graph that match the query and return a new graph with the results.
 
     Parameters
     ----------
     query : str
-        The query string to search for in entity names, types, and observations.
+        The query string to search for.
+    search_mode : Literal["any_token", "all_tokens", "exact_phrase"], optional
+        Defines how the query string is matched against entity fields:
+        - "exact_phrase": The entire query string must be found as a substring (case-insensitive).
+        - "any_token": The query string is split into tokens (words). An entity matches if
+                       any token is found in its fields (case-insensitive). This is the default.
+        - "all_tokens": The query string is split into tokens. An entity matches if
+                        all tokens are found in its fields (case-insensitive).
+                        Tokens can appear in different fields or multiple times in one field.
 
     Returns
     -------
     KnowledgeGraph
-        A new KnowledgeGraph containing only the entities and relations that match
-        the search query. Entities match if the query appears in their name,
-        type, or observations. Relations are included if they connect matching
-        entities.
+        A new KnowledgeGraph containing entities that match the search criteria
+        and relations connecting these matched entities.
     """
     graph = await load_knowledge_graph()
-    filtered_entities = {
-        e.name: e
-        for e in graph.entities.values()
-        if query in e.name.lower()
-        or query in e.entity_type.lower()
-        or any(query in obs.lower() for obs in e.observations)
-    }
+
+    stripped_query = query.strip()
+    if not stripped_query:
+        return KnowledgeGraph()  # No query, no results
+
+    normalized_query_phrase = stripped_query.lower()
+    query_tokens = [token.lower() for token in stripped_query.split() if token]
+
+    # If stripped_query is not empty, query_tokens should also not be empty.
+    # This check is more of a safeguard or for future query processing logic.
+    if not query_tokens and (search_mode == "any_token" or search_mode == "all_tokens"):
+        # If for some reason (e.g. query was only punctuation split away) no tokens remain,
+        # but the original phrase was not empty, fallback to exact_phrase search.
+        search_mode = "exact_phrase"
+
+    matched_entities: dict[str, Entity] = {}
+    for entity_name, e in graph.entities.items():
+        # All searchable text fields of an entity, lowercased once.
+        searchable_texts = [e.name.lower(), e.entity_type.lower()]
+        searchable_texts.extend(obs.lower() for obs in e.observations)
+
+        entity_matches = False
+        if search_mode == "exact_phrase":
+            if any(normalized_query_phrase in text for text in searchable_texts):
+                entity_matches = True
+        elif search_mode == "any_token":
+            # This mode requires query_tokens to be non-empty.
+            if query_tokens and any(token in text for text in searchable_texts for token in query_tokens):
+                entity_matches = True
+        elif search_mode == "all_tokens":
+            # This mode requires query_tokens to be non-empty.
+            # Each token must be found in at least one of the entity's texts.
+            if query_tokens and all(any(token in text for text in searchable_texts) for token in query_tokens):
+                entity_matches = True
+
+        if entity_matches:
+            matched_entities[entity_name] = e
+
+    # Relations are filtered to include only those connecting entities that were matched.
     filtered_relations = {
         (r.relation_from, r.relation_to, r.relation_type): r
         for r in graph.relations.values()
-        if query in r.relation_from.lower() or query in r.relation_to.lower() or query in r.relation_type.lower()
+        if r.relation_from in matched_entities and r.relation_to in matched_entities
     }
-    return KnowledgeGraph(entities=filtered_entities, relations=filtered_relations)
+    return KnowledgeGraph(entities=matched_entities, relations=filtered_relations)
 
 
 async def open_nodes(names: list[str]) -> KnowledgeGraph:
     """
-    Open nodes in the graph based on the names of the nodes.
+    Retrieve specific nodes by name and the relations *between* them.
 
     Parameters
     ----------
     names : list[str]
-        The names of the nodes to open.
+        The names of the nodes to retrieve.
+
+    Returns
+    -------
+    KnowledgeGraph
+        A new KnowledgeGraph containing:
+        - Entities: Only the entities whose names were specified in the `names` list.
+        - Relations: Only the relations where *both* the 'from' and 'to' entities
+          are among the specified `names` and thus included in the returned entities.
     """
     graph = await load_knowledge_graph()
-    filtered_entities = {e.name: e for e in graph.entities.values() if e.name in names}
-    filtered_relations = {
+
+    # Filter entities to include only those specified by name
+    selected_entities = {
+        name: graph.entities[name]
+        for name in names
+        if name in graph.entities  # Ensure entity exists before trying to access
+    }
+
+    # Filter relations to include only those connecting the selected_entities
+    selected_relations = {
         (r.relation_from, r.relation_to, r.relation_type): r
         for r in graph.relations.values()
-        if r.relation_from in names or r.relation_to in names
+        if r.relation_from in selected_entities and r.relation_to in selected_entities
     }
-    return KnowledgeGraph(entities=filtered_entities, relations=filtered_relations)
+    return KnowledgeGraph(entities=selected_entities, relations=selected_relations)
+
+
+kg = KnowledgeGraph(
+    entities={
+        "alice": Entity(
+            name="alice", entity_type="person", observations=["alice is a person", "alice is 20 years old"]
+        ),
+        "bob": Entity(name="bob", entity_type="person", observations=["bob is a person", "bob is 25 years old"]),
+    },
+    relations={
+        ("alice", "bob", "friend"): Relation(relation_from="alice", relation_to="bob", relation_type="friend")
+    },
+)

@@ -12,6 +12,11 @@ from pydantic_ai import ModelRetry
 load_dotenv()
 
 DEFAULT_MEMORY_FILE_PATH = "memory.json"
+KG_LIMITS = {
+    "small": 25_000,
+    "medium": 50_000,
+    "large": 100_000,
+}
 
 
 def load_memory_path() -> Path:
@@ -93,16 +98,16 @@ async def load_knowledge_graph() -> KnowledgeGraph:
         return KnowledgeGraph()
 
 
-KG_SIZE = Literal["small", "medium", "large"]
-
-
-async def get_knowledge_graph_size() -> KG_SIZE:
+async def get_knowledge_graph_size() -> str:
     """
     Get the size of the knowledge graph.
     """
     graph = await load_knowledge_graph()
     kg_tokens = len(graph.model_dump_json()) * 1.3
-    return "small" if kg_tokens <= 25_000 else "medium" if kg_tokens <= 50_000 else "large"
+    for kg_size, limit in KG_LIMITS.items():
+        if kg_tokens <= limit:
+            return kg_size
+    return "large"
 
 
 async def add_entities(entities: list[Entity]) -> None:

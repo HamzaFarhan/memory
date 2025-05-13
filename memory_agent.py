@@ -1,5 +1,4 @@
 import asyncio
-import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,7 +10,7 @@ from pydantic_ai.messages import ModelMessage, ToolCallPart
 load_dotenv()
 
 MEMORY_ITER_LIMIT = 10
-MEMORY_FILE_PATH = "memory.json"
+MEMORY_FILE_PATH = "memories.json"
 
 
 class NothingToRemember(BaseModel):
@@ -46,11 +45,7 @@ async def memorize(agent: Agent, message_history: list[ModelMessage], iter_limit
 
 
 memory_server = MCPServerStdio(
-    command="uv",
-    args=["run", "memory_mcp.py"],
-    env={
-        "MEMORY_FILE_PATH": os.getenv("MEMORY_FILE_PATH", MEMORY_FILE_PATH),
-    },
+    command="uv", args=["run", "memory_mcp.py"], env={"MEMORY_FILE_PATH": MEMORY_FILE_PATH}
 )
 
 agent = Agent(

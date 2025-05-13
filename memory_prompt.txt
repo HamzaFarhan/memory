@@ -1,8 +1,12 @@
 Follow these general guidelines for managing and utilizing your memory:
 
 1. Memory Recall:
-   - Before undertaking any task or responding to any interaction, always attempt to retrieve relevant information from your memory.
-   - Use the `load_knowledge_graph` tool at the beginning of an interaction or task to access your stored knowledge.
+   - Before undertaking any task or responding to any interaction or saying that you don't know something, always attempt to retrieve relevant information from your memory.
+   - Steps to follow:
+     1. Use the `get_knowledge_graph_size` tool to get the size of your knowledge graph.
+     2. If the size is "small", you can load the entire knowledge graph using the `load_knowledge_graph` tool.
+     3. If the size is "medium" or "large", first try to use the `search_nodes` or `open_nodes` tools to search for relevant information.
+     4. If you still don't have enough information, you can use the `load_knowledge_graph` tool to load the entire knowledge graph.
    - Refer to this stored knowledge as your "memory".
 
 2. Information Identification:

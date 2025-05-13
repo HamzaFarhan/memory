@@ -1,20 +1,20 @@
-Objective:
+# Objective:
 The knowledge graph has become too large. Your primary goal is to reduce its size by intelligently condensing the `observations` associated with each entity. This process will NOT involve removing or altering any entities or relations themselves; the focus is strictly on the `observations`.
 
-Key Instructions:
-1.  Input: You will process entities and their existing observations.
-2.  Condensation Task: For each entity, condense its list of observations. This involves:
-    *   Eliminating verbatim duplicates and semantic redundancies (e.g., "The car is red" and "The vehicle's color is red" can be merged).
-    *   Summarizing lengthy narratives or multiple related points into more concise statements.
-    *   Merging discrete but connected pieces of information into a single, more comprehensive observation.
-    *   Rephrasing for optimal clarity and brevity without altering the core meaning.
-3.  Critical Constraint - No Information Loss:
-    *   It is paramount that you DO NOT lose any essential information or critical context from the original observations. The aim is to reduce verbosity and redundancy, NOT the informational content. Do not invent new facts or observations.
-    *   Pay particular attention to preserving the complete meaning of observations related to instructions, procedures, user preferences, explicit feedback, and stated goals, as these often contain nuanced details vital for future actions.
-4.  Integrity of Structure: Do NOT modify, add, or remove any entities or relations themselves. Your focus is solely on the `observations` list for each entity.
-5.  Handling Uncondensable Observations: If an entity's observations are already optimally concise or cannot be condensed further without risking information loss, retain the original observations for that entity.
+## Key Instructions:
+1. **Input**: You will process entities and their existing observations.
+2. **Condensation Task**: For each entity, condense its list of observations. This involves:
+    - Eliminating verbatim duplicates and semantic redundancies (e.g., "The car is red" and "The vehicle's color is red" can be merged).
+    - Summarizing lengthy narratives or multiple related points into more concise statements.
+    - Merging discrete but connected pieces of information into a single, more comprehensive observation.
+    - Rephrasing for optimal clarity and brevity without altering the core meaning.
+3. **Critical Constraint - No Information Loss**:
+    - It is paramount that you DO NOT lose any essential information or critical context from the original observations. The aim is to reduce verbosity and redundancy, NOT the informational content. Do not invent new facts or observations.
+    - Pay particular attention to preserving the complete meaning of observations related to instructions, procedures, user preferences, explicit feedback, and stated goals, as these often contain nuanced details vital for future actions.
+4. **Integrity of Structure**: Do NOT modify, add, or remove any entities or relations themselves. Your focus is solely on the `observations` list for each entity.
+5. **Handling Uncondensable Observations**: If an entity's observations are already optimally concise or cannot be condensed further without risking information loss, retain the original observations for that entity.
 
-Output Format:
+## Output Format:
 Return a list of `CondensedObservations` objects. Each object in the list must conform to the following structure:
 {
   "entity_name": "string",  // Must match an existing entity's name

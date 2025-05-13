@@ -13,13 +13,17 @@ A knowledge-graph-based memory system for AI agents that enables persistent info
 The system provides the following MCP tools:
 
 - `load_knowledge_graph()`: Retrieves the entire knowledge graph
+- `get_knowledge_graph_size()`: Returns the current size category of the graph ("small", "medium", or "large")
 - `add_entities(entities)`: Adds new entities to the memory
 - `add_relations(relations)`: Creates relationships between entities
 - `add_observations(entity_name, observations)`: Adds observations to existing entities
 - `delete_entities(entity_names)`: Removes entities from memory
 - `delete_relations(relations)`: Removes relationships
-- `search_nodes(query)`: Searches for entities and relations matching a query
-- `open_nodes(names)`: Retrieves specific entities and their relationships
+- `search_nodes(query, search_mode)`: Searches for entities and relations matching a query. Supports three search modes:
+  - "exact_phrase": Matches the entire query as a substring
+  - "any_token": Matches if any word in the query matches (default)
+  - "all_tokens": Matches if all words in the query match
+- `open_nodes(names)`: Retrieves specific entities and their relationships between them
 
 ## Usage
 

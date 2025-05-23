@@ -12,11 +12,7 @@ from pydantic_ai import ModelRetry
 load_dotenv()
 
 DEFAULT_MEMORY_FILE_PATH = "memory.json"
-KG_LIMITS = {
-    "small": 25_000,
-    "medium": 50_000,
-    "large": 100_000,
-}
+KG_LIMITS = {"small": 25_000, "medium": 50_000, "large": 100_000}
 
 
 def load_memory_path() -> Path:
